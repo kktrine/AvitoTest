@@ -10,6 +10,7 @@
 package openapi
 
 import (
+	"banner/models"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -185,18 +186,18 @@ func (c *DefaultAPIController) BannerIdPatch(w http.ResponseWriter, r *http.Requ
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	bannerIdDeleteRequestParam := BannerIdDeleteRequest{}
+	bannerIdDeleteRequestParam := models.BannerIdDeleteRequest{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
 	if err := d.Decode(&bannerIdDeleteRequestParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertBannerIdDeleteRequestRequired(bannerIdDeleteRequestParam); err != nil {
+	if err := models.AssertBannerIdDeleteRequestRequired(bannerIdDeleteRequestParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	if err := AssertBannerIdDeleteRequestConstraints(bannerIdDeleteRequestParam); err != nil {
+	if err := models.AssertBannerIdDeleteRequestConstraints(bannerIdDeleteRequestParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
@@ -213,18 +214,18 @@ func (c *DefaultAPIController) BannerIdPatch(w http.ResponseWriter, r *http.Requ
 
 // BannerPost - Создание нового баннера
 func (c *DefaultAPIController) BannerPost(w http.ResponseWriter, r *http.Request) {
-	bannerGetRequestParam := BannerGetRequest{}
+	bannerGetRequestParam := models.BannerGetRequest{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
 	if err := d.Decode(&bannerGetRequestParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertBannerGetRequestRequired(bannerGetRequestParam); err != nil {
+	if err := models.AssertBannerGetRequestRequired(bannerGetRequestParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	if err := AssertBannerGetRequestConstraints(bannerGetRequestParam); err != nil {
+	if err := models.AssertBannerGetRequestConstraints(bannerGetRequestParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}

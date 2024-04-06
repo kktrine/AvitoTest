@@ -10,7 +10,7 @@
 package main
 
 import (
-	openapi "banner/go"
+	openapi "banner/restapi"
 	"log"
 	"net/http"
 )
