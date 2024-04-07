@@ -1,7 +1,6 @@
 package cashe
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 	"sync"
@@ -43,16 +42,16 @@ func NewCashe(defaultExpiration, cleanupInterval time.Duration) *Cache {
 func (c *Cache) Add(feature int, tags []int) error {
 	c.Lock()
 	defer c.Unlock()
-	item, found := c.Items[feature]
-	if found {
-		for _, existingTags := range item {
-			for _, tag := range tags {
-				if slices.Contains(existingTags.Tags, tag) {
-					return errors.New("banner already exists")
-				}
-			}
-		}
-	}
+	//item, found := c.Items[feature]
+	//if found {
+	//	for _, existingTags := range item {
+	//		for _, tag := range tags {
+	//			if slices.Contains(existingTags.Tags, tag) {
+	//				return errors.New("banner already exists")
+	//			}
+	//		}
+	//	}
+	//}
 	itemToAdd := Item{Tags: tags, AdminOnlyAccess: false, Expiration: time.Now().Add(c.defaultExpiration)}
 	c.Items[feature] = append(c.Items[feature], itemToAdd)
 	return nil
@@ -85,51 +84,51 @@ func (c *Cache) Get(feature, tag int) (int, []int, bool) {
 
 }
 
-func (c *Cache) Delete(feature, tag int) error {
-	c.Lock()
-	defer c.Unlock()
+//func (c *Cache) Delete(feature, tag int) error {
+//	c.Lock()
+//	defer c.Unlock()
+//
+//	item, found := c.Items[feature]
+//	if !found {
+//		return errors.New("tag not found")
+//	}
+//	found = false
+//	for i, value := range item {
+//		if slices.Contains(value.Tags, tag) {
+//			found = true
+//			c.Items[feature] = append(c.Items[feature][:i], c.Items[feature][i+1:]...)
+//			break
+//		}
+//	}
+//	if !found {
+//		return errors.New("feature not found")
+//	}
+//	if len(c.Items[feature]) == 0 {
+//		delete(c.Items, tag)
+//	}
+//	return nil
+//}
 
-	item, found := c.Items[feature]
-	if !found {
-		return errors.New("tag not found")
-	}
-	found = false
-	for i, value := range item {
-		if slices.Contains(value.Tags, tag) {
-			found = true
-			c.Items[feature] = append(c.Items[feature][:i], c.Items[feature][i+1:]...)
-			break
-		}
-	}
-	if !found {
-		return errors.New("feature not found")
-	}
-	if len(c.Items[feature]) == 0 {
-		delete(c.Items, tag)
-	}
-	return nil
-}
-
-func (c *Cache) ChangeAccess(feature, tag int) error {
-	item, found := c.Items[feature]
-
-	// ключ не найден
-	if !found {
-		return errors.New("tag not found")
-	}
-	found = false
-	for i, value := range item {
-		if slices.Contains(value.Tags, tag) {
-			c.Items[feature][i].AdminOnlyAccess = true
-			found = true
-			break
-		}
-	}
-	if !found {
-		return errors.New("feature not found")
-	}
-	return nil
-}
+//func (c *Cache) ChangeAccess(feature, tag int) error {
+//	item, found := c.Items[feature]
+//
+//	// ключ не найден
+//	if !found {
+//		return errors.New("tag not found")
+//	}
+//	found = false
+//	for i, value := range item {
+//		if slices.Contains(value.Tags, tag) {
+//			c.Items[feature][i].AdminOnlyAccess = true
+//			found = true
+//			break
+//		}
+//	}
+//	if !found {
+//		return errors.New("feature not found")
+//	}
+//	return nil
+//}
 
 func (c *Cache) startGC() {
 	go c.gC()
