@@ -22,7 +22,7 @@ type Item struct {
 	Expiration      time.Time
 }
 
-func New(defaultExpiration, cleanupInterval time.Duration) *Cache {
+func NewCashe(defaultExpiration, cleanupInterval time.Duration) *Cache {
 
 	items := make(map[int][]Item)
 
@@ -69,23 +69,20 @@ func (c *Cache) Get(feature, tag int) (int, []int, bool) {
 		return 0, nil, false
 	}
 
-	var tags []int
 	for _, value := range item {
 		if slices.Contains(value.Tags, tag) {
-			tags = value.Tags
+
 			// Если в момент запроса кеш устарел возвращаем nil
 			if time.Now().After(value.Expiration) {
 				return 0, nil, false
 			}
+			return feature, value.Tags, true
 
 		}
 	}
 
-	if len(tags) == 0 {
-		return 0, nil, false
-	}
+	return 0, nil, false
 
-	return tag, tags, true
 }
 
 func (c *Cache) Delete(feature, tag int) error {
