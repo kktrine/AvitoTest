@@ -4,7 +4,6 @@ import (
 	"banner/internal/config"
 	"errors"
 	"fmt"
-	"github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"math/rand"
@@ -15,10 +14,15 @@ type Postgres struct {
 }
 
 type Banner struct {
-	Feature  int
-	Tags     pq.Int32Array `gorm:"type:integer[]"`
-	Content  string
-	IsActive bool `gorm:"default:true"`
+	id      int `gorm:"foreignKey:id;references:id"`
+	Feature int `gorm:"index"`
+	Tag     int `gorm:"type:integer[]"`
+}
+
+type Data struct {
+	id       int    `gorm:"primary_key;auto_increment"`
+	context  string `gorm:"type:text;default:'this is json';not null"`
+	isActive bool   `gorm:"type:boolean;default:true;"`
 }
 
 func NewPostgresRepository(cfg config.DbConfig) *Postgres {
@@ -27,8 +31,10 @@ func NewPostgresRepository(cfg config.DbConfig) *Postgres {
 	if err != nil {
 		panic("couldn't connect to database")
 	}
-	db.AutoMigrate(&Banner{})
-
+	err = db.AutoMigrate(&Banner{})
+	if err != nil {
+		panic("can't migrate database")
+	}
 	return &Postgres{db}
 }
 
@@ -40,20 +46,18 @@ func (p *Postgres) Stop() error {
 	return val.Close()
 }
 
-//func (p *Postgres) InsertBanner(banner *models.Banner) error {
-//	res := models.Banner{}
-//	for _, tag := range banner.TagIds {
-//		p.Db.Where("feature = ? AND ? = ANY (tags)", banner.FeatureId, tag).First(&res)
-//		if len(res.TagIds) > 0 {
-//			return errors.New("no unique pairs tag-feature found")
-//		}
-//	}
-//	return p.Db.Create(banner).Error
-//}
+func (p *Postgres) InsertErrorHandler(b *Banner) error {
+	err := p.Db.Create(b).Error
+	if err != nil {
+
+		return errors.New("can't insert banner into existing records; error: " + err.Error())
+	}
+	return nil
+}
 
 func (p *Postgres) Fill() error {
 
-	for i := 1; i < 500; i++ {
+	for i := 1; i < 100; i++ {
 		for j := 1; j <= 20; j++ {
 			count := rand.Intn(4) + 2
 			banner := Banner{
@@ -63,9 +67,9 @@ func (p *Postgres) Fill() error {
 				banner.Tags = append(banner.Tags, int32(k))
 			}
 			j += count
-			res := p.Db.Create(&banner)
-			if res.Error != nil {
-				return res.Error
+			err := p.InsertErrorHandler(&banner)
+			if err != nil {
+				return err
 			}
 		}
 	}

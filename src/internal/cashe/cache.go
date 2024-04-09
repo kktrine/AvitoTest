@@ -21,7 +21,7 @@ type Item struct {
 	Expiration      time.Time
 }
 
-func NewCashe(defaultExpiration, cleanupInterval time.Duration) *Cache {
+func NewCache(defaultExpiration, cleanupInterval time.Duration) *Cache {
 
 	items := make(map[int][]Item)
 
