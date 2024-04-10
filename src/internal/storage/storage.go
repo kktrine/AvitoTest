@@ -5,7 +5,6 @@ import (
 	"banner/internal/config"
 	"banner/internal/postgresql"
 	"banner/models"
-	"fmt"
 	"time"
 )
 
@@ -30,17 +29,19 @@ func (s *Storage) Fill() error {
 	return s.db.Fill()
 }
 
+func (s *Storage) Insert(record *models.InsertData) error {
+	return s.db.Insert(record)
+}
+
 func (s *Storage) GetUserBanner(feature, tag int32) (models.JSONMap, bool, bool, error) {
-	//fmt.Println(s.db.Get(feature, tag))
 	return s.db.Get(feature, tag)
-
 }
 
-func (s *Storage) Update(feature, tag int32, newValue models.JSONMap) {
-	fmt.Println(s.db.Update(feature, tag, newValue))
-
+func (s *Storage) Update(id int32, record *models.InsertData) error {
+	//fmt.Println(s.db.Update(feature, tag, newValue))
+	return s.db.Update(id, record)
 }
 
-func (s *Storage) Delete(feature, tag int32) {
-	fmt.Println(s.db.Delete(feature, tag))
+func (s *Storage) Delete(id int32) (bool, error) {
+	return s.db.Delete(id)
 }

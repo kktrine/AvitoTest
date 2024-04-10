@@ -8,6 +8,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"math/rand"
+	"time"
 )
 
 type Postgres struct {
@@ -21,9 +22,11 @@ type Banner struct {
 }
 
 type Data struct {
-	Id       int32          `gorm:"primary_key;auto_increment"`
-	Content  models.JSONMap `gorm:"type:json;default:'{\"key\": \"value\"}';not null"`
-	IsActive bool           `gorm:"type:boolean;default:true;"`
+	Id        int32          `gorm:"primary_key;auto_increment"`
+	Content   models.JSONMap `gorm:"type:json;default:'{\"key\": \"value\"}';not null"`
+	IsActive  bool           `gorm:"type:boolean;default:true;"`
+	CreatedAt time.Time      `gorm:"autoUpdateTime:milli"`
+	UpdatedAt time.Time      `gorm:"autoCreateTime"`
 }
 
 func NewPostgresRepository(cfg config.DbConfig) *Postgres {
@@ -74,7 +77,7 @@ func (p *Postgres) Insert(record *models.InsertData) error {
 	}
 	var banners []Banner
 	for _, i := range record.TagIds {
-		banners = append(banners, Banner{d.Id, record.Feature, i})
+		banners = append(banners, Banner{DataId: d.Id, Feature: record.Feature, Tag: i})
 	}
 	if err := tx.Create(&banners).Error; err != nil {
 		tx.Rollback()
@@ -140,18 +143,23 @@ func (p *Postgres) findId(feature, tag int32, tx *gorm.DB) (int32, error) {
 	return idToFind.DataId, nil
 }
 
-func (p *Postgres) Update(feature, tag int32, newValue models.JSONMap) error {
+func (p *Postgres) Update(id int32, newValue *models.InsertData) error {
 	tx := p.Db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
-	id, err := p.findId(feature, tag, tx)
-	if err != nil {
-		return err
+	newData := Data{
+		Content:  newValue.Content,
+		IsActive: newValue.IsActive,
 	}
-	errUpd := tx.Model(&Data{}).Where("id = ?", id).Updates(map[string]interface{}{"content": newValue})
+	errUpd := tx.Model(&Data{}).Where("id = ?", id).Updates(&newData)
+	if errUpd.Error != nil {
+		tx.Rollback()
+		return errors.New("can't update banner: " + errUpd.Error.Error())
+	}
+	errUpd = tx.Model(&Banner{}).Where("id = ?", id).Updates(newValue)
 	if errUpd.Error != nil {
 		tx.Rollback()
 		return errors.New("can't update banner: " + errUpd.Error.Error())
@@ -159,29 +167,31 @@ func (p *Postgres) Update(feature, tag int32, newValue models.JSONMap) error {
 	return tx.Commit().Error
 }
 
-func (p *Postgres) Delete(feature, tag int32) error {
+func (p *Postgres) Delete(id int32) (bool, error) {
 	tx := p.Db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
-	id, err := p.findId(feature, tag, tx)
-	if err != nil {
-		return err
-	}
-	if err := tx.Delete(&Data{}, id).Error; err != nil {
+	err := tx.Delete(&Data{}, id)
+	if err.Error != nil {
 		tx.Rollback()
-		return errors.New("can't delete data: " + err.Error())
+		return err.RowsAffected > 0, errors.New("can't delete data: " + err.Error.Error())
 	}
-	if err := tx.Where("data_id = ?", id).Delete(&Banner{}).Error; err != nil {
+	if err.RowsAffected == 0 {
+		return false, nil
+	}
+	err = tx.Where("data_id = ?", id).Delete(&Banner{})
+	if err.Error != nil {
 		tx.Rollback()
-		return errors.New("can't delete banner: " + err.Error())
+		return err.RowsAffected > 0, errors.New("can't delete banner: " + err.Error.Error())
 	}
 	if tx.Error != nil {
-		return errors.New("something went wrong: " + tx.Error.Error())
+		tx.Rollback()
+		return err.RowsAffected > 0, errors.New("something went wrong: " + tx.Error.Error())
 	}
-	return tx.Commit().Error
+	return err.RowsAffected > 0, tx.Commit().Error
 }
 
 func (p *Postgres) Fill() error {

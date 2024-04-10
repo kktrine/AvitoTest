@@ -8,7 +8,7 @@ import (
 )
 
 func Logger(inner http.Handler, name string) http.Handler {
-	logFile, err := os.OpenFile("./logger/logger.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logFile, err := os.OpenFile("/home/ekaterina/GitHub/AvitoTest/src/logger/logger.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("failed to open log file: %v", err)
 	}

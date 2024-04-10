@@ -22,6 +22,7 @@ import (
 type DefaultAPIController struct {
 	service      DefaultAPIServicer
 	errorHandler ErrorHandler
+	loggerPath   string
 }
 
 // DefaultAPIOption for how the controller is set up.
