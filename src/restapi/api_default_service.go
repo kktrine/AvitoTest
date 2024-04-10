@@ -1,37 +1,33 @@
 package openapi
 
 import (
-	"banner/internal/cashe"
-	"banner/internal/config"
-	"banner/internal/postgresql"
+	"banner/internal/simple_auth"
+	"banner/internal/storage"
 	"banner/models"
 	"context"
 	//"database/sql"
 	"errors"
 	"net/http"
-	"time"
 )
 
 // DefaultAPIService is a service that implements the logic for the DefaultAPIServicer
 // This service should implement the business logic for every endpoint for the DefaultAPI API.
 // Include any external packages or services that will be required by this service.
 type DefaultAPIService struct {
-	c  *cashe.Cache
-	db *postgresql.Postgres
+	storage *storage.Storage
 }
 
 // NewDefaultAPIService creates a default api service
 func NewDefaultAPIService() DefaultAPIServicer {
-	cfg := config.MustLoad()
-	database := postgresql.NewPostgresRepository(cfg.DbConfig)
+
 	return &DefaultAPIService{
-		c:  cashe.New(5*time.Minute, 5*time.Minute+30*time.Second),
-		db: database,
+		storage: storage.NewStorage(),
 	}
 }
 
 // BannerGet - Получение всех баннеров c фильтрацией по фиче и/или тегу
 func (s *DefaultAPIService) BannerGet(ctx context.Context, token string, featureId int32, tagId int32, limit int32, offset int32) (ImplResponse, error) {
+
 	// TODO - update BannerGet with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -127,9 +123,26 @@ func (s *DefaultAPIService) BannerPost(ctx context.Context, bannerGetRequest mod
 
 // UserBannerGet - Получение баннера для пользователя
 func (s *DefaultAPIService) UserBannerGet(ctx context.Context, tagId int32, featureId int32, useLastRevision bool, token string) (ImplResponse, error) {
-	// TODO - update UserBannerGet with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+	ok, err := simple_auth.CheckAdminToken(token)
+	if err != nil {
+		return Response(401, "Пользователь не авторизован"), nil
+	}
 
+	res, userAccess, found, err := s.storage.GetUserBanner(featureId, tagId)
+	if err != nil && !found {
+		return Response(500, "Внутренняя ошибка сервера: "+err.Error()), nil
+	}
+	if !found {
+		return Response(404, "Баннер не найден"), nil
+	}
+	if ok {
+		return Response(200, map[string]interface{}{}), nil
+	}
+	if !userAccess {
+		return Response(403, "Пользователь не имеет доступа"), nil
+	}
+	return Response(200, res), nil
 	// TODO: Uncomment the next line to return response Response(200, map[string]interface{}{}) or use other options such as http.Ok ...
 	// return Response(200, map[string]interface{}{}), nil
 
@@ -148,5 +161,5 @@ func (s *DefaultAPIService) UserBannerGet(ctx context.Context, tagId int32, feat
 	// TODO: Uncomment the next line to return response Response(500, UserBannerGet400Response{}) or use other options such as http.Ok ...
 	// return Response(500, UserBannerGet400Response{}), nil
 
-	return Response(http.StatusNotImplemented, nil), errors.New("UserBannerGet method not implemented")
+	// return Response(http.StatusNotImplemented, nil), errors.New("UserBannerGet method not implemented")
 }
