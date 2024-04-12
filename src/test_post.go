@@ -71,16 +71,18 @@ func main() {
 	var mu sync.Mutex
 	total := len(banners)
 	success := atomic.Int32{}
+
 	for _, banner := range banners {
 		wg.Add(1)
 		time.Sleep(1 * time.Millisecond)
-		go func(banner map[string]interface{}, sucess *atomic.Int32) {
+		go func(banner map[string]interface{}, success *atomic.Int32) {
 			data, _ := json.Marshal(banner)
 			time.Sleep(1 * time.Millisecond)
 			res := sendRequest(data)
 			if res == "201 Created" {
 				mu.Lock()
 				success.Add(1)
+				fmt.Printf("Успешных вставок: %d \n\n", success.Load())
 				mu.Unlock()
 			} else {
 				mu.Lock()
