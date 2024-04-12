@@ -22,7 +22,7 @@ type DefaultAPIService struct {
 // NewDefaultAPIService creates a default api service
 func NewDefaultAPIService() DefaultAPIServicer {
 	storage := storage.NewStorage()
-	storage.Fill()
+	//storage.Fill()
 	return &DefaultAPIService{
 		Storage: storage,
 	}
@@ -30,7 +30,18 @@ func NewDefaultAPIService() DefaultAPIServicer {
 
 // BannerGet - Получение всех баннеров c фильтрацией по фиче и/или тегу
 func (s *DefaultAPIService) BannerGet(ctx context.Context, token string, featureId int32, tagId int32, limit int32, offset int32) (ImplResponse, error) {
-
+	ok, err := simple_auth.CheckAdminToken(token)
+	if err != nil {
+		return Response(401, "Пользователь не авторизован"), nil
+	}
+	if !ok {
+		return Response(403, "Пользователь не имеет доступа"), nil
+	}
+	res, err := s.Storage.GetMany(featureId, tagId, limit, offset)
+	if err != nil {
+		return Response(500, err.Error()), nil
+	}
+	return Response(200, res), nil
 	// TODO - update BannerGet with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 

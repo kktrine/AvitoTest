@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"math/rand"
 	"time"
 )
 
@@ -33,7 +32,7 @@ func NewPostgresRepository(cfg config.DbConfig) *Postgres {
 	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable", cfg.Host, cfg.User, cfg.Password, cfg.DbName, cfg.Port)
 	db, err := gorm.Open(postgres.Open(connStr), &gorm.Config{})
 	rawDB, _ := db.DB()
-	rawDB.SetMaxOpenConns(2)
+	rawDB.SetMaxOpenConns(52)
 	if err != nil {
 		panic("couldn't connect to database")
 	}
@@ -41,8 +40,10 @@ func NewPostgresRepository(cfg config.DbConfig) *Postgres {
 	if err := db.AutoMigrate(&Banner{}, &Data{}); err != nil {
 		panic("can't migrate databases")
 	}
-	db.Exec("DELETE  FROM data;")
-	db.Exec("DELETE FROM banners;")
+	//db.Exec("DELETE  FROM data;")
+	//db.Exec("DELETE FROM banners;")
+	//db.Exec("CREATE INDEX idx_some_int ON banners(data_id)")
+
 	return &Postgres{db}
 }
 
@@ -138,7 +139,7 @@ func (p *Postgres) Get(feature, tag int32) (data models.JSONMap, userAccess bool
 
 func (p *Postgres) findId(feature, tag int32, tx *gorm.DB) (int32, error) {
 	var idToFind Banner
-	if err := tx.Where("feature = ? AND tag = ?", feature, tag).First(&idToFind).Error; err != nil {
+	if err := tx.Model(&Banner{}).Where("feature = ? AND tag = ?", feature, tag).First(&idToFind).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 0, fmt.Errorf("banner with feature %d and tag %d not found", feature, tag)
 		}
@@ -227,44 +228,79 @@ func (p *Postgres) Delete(id int32) (bool, error) {
 	return err.RowsAffected > 0, tx.Commit().Error
 }
 
-func (p *Postgres) GetMany(featureId int32, tagId int32, limit int32, offset int32) {
-	//tx := p.Db.Begin()
-	//defer func() {
-	//	if r := recover(); r != nil {
-	//		tx.Rollback()
-	//	}
-	//}()
-	//res := make([]map[string]interface{}, 0)
-	//elem := map[string]interface{}{
-	//	"feature_id": 1,
-	//	"tag_ids":    []int{},
-	//	"is_active":  true,
-	//	"updated_at": "2000-01-23T04:56:07.000+00:00",
-	//	"banner_id":  0,
-	//	"created_at": "2000-01-23T04:56:07.000+00:00",
-	//	"content":    map[string]interface{}{},
-	//}
-
-}
-
-func (p *Postgres) Fill() error {
-	for i := 1; i < 1001; i++ {
-		for j := 1; j <= 10; j++ {
-			count := rand.Intn(4) + 2
-			banner := models.InsertData{}
-			val := int32(i)
-			banner.Feature = val
-			tags := make([]int32, 0, count)
-			for k := int32(j); k < int32(j+count); k++ {
-				tags = append(tags, k)
-			}
-			banner.TagIds = tags
-			j += count
-			_, err := p.Insert(&banner)
-			if err != nil {
-				return err
-			}
+func (p *Postgres) GetMany(featureId int32, tagId int32, limit int32, offset int32) ([]map[string]interface{}, error) {
+	tx := p.Db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
 		}
+	}()
+	if limit == 0 {
+		limit = -1
 	}
-	return nil
+	if offset == 0 {
+		offset = -1
+	}
+	var ids []int32
+	bannersIds := make(map[int32]string)
+	var resData []Data
+	var resBanners []Banner
+	if featureId > 0 && tagId > 0 {
+		tx.Model(&Banner{}).Where("feature = ? AND tag = ?", featureId, tagId).Pluck("data_id", &ids)
+	} else {
+		tx.Model(&Banner{}).Where("feature = ? OR tag = ?", featureId, tagId).Pluck("data_id", &ids)
+	}
+	tx.Model(&Banner{}).Where("data_id IN (?)", ids).Find(&resBanners)
+	//fmt.Println(resBanners)
+	tx.Model(&Data{}).Limit(int(limit)).Offset(int(offset)).Where("id IN (?)", ids).Distinct().Find(&resData)
+	res := make([]map[string]interface{}, 0, len(resData))
+	if tx.Error != nil {
+		tx.Rollback()
+		return nil, errors.New("something went wrong: " + tx.Error.Error())
+	}
+	bannerGroups := make(map[string]struct {
+		DataID  int32
+		Feature int32
+		Tags    []int32
+	})
+	for _, banner := range resBanners {
+		key := fmt.Sprintf("%d_%d", banner.DataId, banner.Feature)
+		group, ok := bannerGroups[key]
+		if !ok {
+			group = struct {
+				DataID  int32
+				Feature int32
+				Tags    []int32
+			}{
+				DataID:  banner.DataId,
+				Feature: banner.Feature,
+				Tags:    []int32{}}
+			bannersIds[banner.DataId] = key
+		}
+		group.Tags = append(group.Tags, banner.Tag)
+		bannerGroups[key] = group
+
+	}
+
+	for _, i := range resData {
+		elem := map[string]interface{}{
+			"feature_id": 0,
+			"tag_ids":    []int{},
+			"is_active":  true,
+			"updated_at": "",
+			"banner_id":  0,
+			"created_at": "",
+			"content":    map[string]interface{}{},
+		}
+		elem["content"] = i.Content
+		elem["is_active"] = i.IsActive
+		elem["updated_at"] = i.UpdatedAt
+		elem["created_at"] = i.CreatedAt
+		elem["banner_id"] = i.Id
+		elem["tag_ids"] = bannerGroups[bannersIds[i.Id]].Tags
+		elem["feature_id"] = bannerGroups[bannersIds[i.Id]].Feature
+		res = append(res, elem)
+	}
+
+	return res, tx.Commit().Error
 }

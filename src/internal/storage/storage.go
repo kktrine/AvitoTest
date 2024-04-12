@@ -25,10 +25,6 @@ func NewStorage() *Storage {
 	}
 }
 
-func (s *Storage) Fill() error {
-	return s.db.Fill()
-}
-
 func (s *Storage) Insert(record *models.InsertData) (int32, error) {
 	return s.db.Insert(record)
 }
@@ -44,4 +40,8 @@ func (s *Storage) Update(id int32, record *models.InsertData) (bool, error) {
 
 func (s *Storage) Delete(id int32) (bool, error) {
 	return s.db.Delete(id)
+}
+
+func (s *Storage) GetMany(featureId int32, tagId int32, limit int32, offset int32) ([]map[string]interface{}, error) {
+	return s.db.GetMany(featureId, tagId, limit, offset)
 }
