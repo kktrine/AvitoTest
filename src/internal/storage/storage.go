@@ -29,7 +29,7 @@ func (s *Storage) Fill() error {
 	return s.db.Fill()
 }
 
-func (s *Storage) Insert(record *models.InsertData) error {
+func (s *Storage) Insert(record *models.InsertData) (int32, error) {
 	return s.db.Insert(record)
 }
 
@@ -37,7 +37,7 @@ func (s *Storage) GetUserBanner(feature, tag int32) (models.JSONMap, bool, bool,
 	return s.db.Get(feature, tag)
 }
 
-func (s *Storage) Update(id int32, record *models.InsertData) error {
+func (s *Storage) Update(id int32, record *models.InsertData) (bool, error) {
 	//fmt.Println(s.db.Update(feature, tag, newValue))
 	return s.db.Update(id, record)
 }

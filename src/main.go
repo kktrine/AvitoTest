@@ -17,7 +17,6 @@ import (
 
 func main() {
 	log.Printf("Server started")
-
 	DefaultAPIService := openapi.NewDefaultAPIService()
 	DefaultAPIController := openapi.NewDefaultAPIController(DefaultAPIService)
 

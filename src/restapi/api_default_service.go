@@ -5,6 +5,8 @@ import (
 	"banner/internal/storage"
 	"banner/models"
 	"context"
+	"strconv"
+
 	//"database/sql"
 	"errors"
 	"net/http"
@@ -19,8 +21,10 @@ type DefaultAPIService struct {
 
 // NewDefaultAPIService creates a default api service
 func NewDefaultAPIService() DefaultAPIServicer {
+	storage := storage.NewStorage()
+	storage.Fill()
 	return &DefaultAPIService{
-		Storage: storage.NewStorage(),
+		Storage: storage,
 	}
 }
 
@@ -65,28 +69,7 @@ func (s *DefaultAPIService) BannerIdDelete(ctx context.Context, id int32, token 
 		return Response(404, "Баннер для тэга не найден"), nil
 	}
 	return Response(204, "Баннер успешно удален"), nil
-	// TODO - update BannerIdDelete with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
-	// return Response(204, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(400, UserBannerGet400Response{}) or use other options such as http.Ok ...
-	// return Response(400, UserBannerGet400Response{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
-	// return Response(401, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(403, {}) or use other options such as http.Ok ...
-	// return Response(403, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	// return Response(404, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(500, UserBannerGet400Response{}) or use other options such as http.Ok ...
-	// return Response(500, UserBannerGet400Response{}), nil
-
-	// return Response(http.StatusNotImplemented, nil), errors.New("BannerIdDelete method not implemented")
 }
 
 // BannerIdPatch - Обновление содержимого баннера
@@ -101,29 +84,27 @@ func (s *DefaultAPIService) BannerIdPatch(ctx context.Context, id int32, bannerI
 	if id <= 0 {
 		return Response(400, "Некорректные данные. Id должен быть положительным числом"), nil
 	}
-
-	// TODO - update BannerIdPatch with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
-	// return Response(200, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(400, UserBannerGet400Response{}) or use other options such as http.Ok ...
-	// return Response(400, UserBannerGet400Response{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
-	// return Response(401, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(403, {}) or use other options such as http.Ok ...
-	// return Response(403, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	// return Response(404, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(500, UserBannerGet400Response{}) or use other options such as http.Ok ...
-	// return Response(500, UserBannerGet400Response{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("BannerIdPatch method not implemented")
+	toUpdate := models.InsertData{}
+	if bannerIdDeleteRequest.FeatureId != nil {
+		toUpdate.Feature = *bannerIdDeleteRequest.FeatureId
+	}
+	if bannerIdDeleteRequest.TagIds != nil {
+		toUpdate.TagIds = *bannerIdDeleteRequest.TagIds
+	}
+	if bannerIdDeleteRequest.Content != nil {
+		toUpdate.Content = *bannerIdDeleteRequest.Content
+	}
+	if bannerIdDeleteRequest.IsActive != nil {
+		toUpdate.IsActive = *bannerIdDeleteRequest.IsActive
+	}
+	found, err := s.Storage.Update(id, &toUpdate)
+	if !found {
+		return Response(404, "Баннер не найден"), nil
+	}
+	if err != nil {
+		return Response(500, err.Error()), nil
+	}
+	return Response(200, nil), nil
 }
 
 // BannerPost - Создание нового баннера
@@ -143,35 +124,16 @@ func (s *DefaultAPIService) BannerPost(ctx context.Context, bannerGetRequest mod
 			return Response(400, "Некорректные данные. Фича и тэг должны быть положительными числами"), nil
 		}
 	}
-	if err := s.Storage.Insert(&models.InsertData{
+	id, err := s.Storage.Insert(&models.InsertData{
 		Feature:  bannerGetRequest.FeatureId,
 		TagIds:   bannerGetRequest.TagIds,
 		Content:  bannerGetRequest.Content,
 		IsActive: bannerGetRequest.IsActive,
-	}); err != nil {
+	})
+	if err != nil {
 		return Response(500, err.Error()), nil
 	}
-	return Response(201, "Created"), nil
-
-	// TODO - update BannerPost with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(201, BannerGet201Response{}) or use other options such as http.Ok ...
-	// return Response(201, BannerGet201Response{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, UserBannerGet400Response{}) or use other options such as http.Ok ...
-	// return Response(400, UserBannerGet400Response{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
-	// return Response(401, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(403, {}) or use other options such as http.Ok ...
-	// return Response(403, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(500, UserBannerGet400Response{}) or use other options such as http.Ok ...
-	// return Response(500, UserBannerGet400Response{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("BannerPost method not implemented")
+	return Response(201, "Created with id: "+strconv.Itoa(int(id))), nil
 }
 
 // UserBannerGet - Получение баннера для пользователя
@@ -198,23 +160,4 @@ func (s *DefaultAPIService) UserBannerGet(ctx context.Context, tagId int32, feat
 		return Response(403, "Пользователь не имеет доступа"), nil
 	}
 	return Response(200, res), nil
-	// TODO: Uncomment the next line to return response Response(200, map[string]interface{}{}) or use other options such as http.Ok ...
-	// return Response(200, map[string]interface{}{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, UserBannerGet400Response{}) or use other options such as http.Ok ...
-	// return Response(400, UserBannerGet400Response{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
-	// return Response(401, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(403, {}) or use other options such as http.Ok ...
-	// return Response(403, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	// return Response(404, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(500, UserBannerGet400Response{}) or use other options such as http.Ok ...
-	// return Response(500, UserBannerGet400Response{}), nil
-
-	// return Response(http.StatusNotImplemented, nil), errors.New("UserBannerGet method not implemented")
 }
