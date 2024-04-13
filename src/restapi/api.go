@@ -27,4 +27,5 @@ type DefaultAPIServicer interface {
 	BannerIdPatch(context.Context, int32, models.BannerIdDeleteRequest, string) (ImplResponse, error)
 	BannerPost(context.Context, models.BannerGetRequest, string) (ImplResponse, error)
 	UserBannerGet(context.Context, int32, int32, bool, string) (ImplResponse, error)
+	Stop() error
 }

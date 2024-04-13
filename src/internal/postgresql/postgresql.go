@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"time"
 )
 
@@ -23,16 +24,21 @@ type Banner struct {
 type Data struct {
 	Id        int32          `gorm:"primary_key;auto_increment"`
 	Content   models.JSONMap `gorm:"type:json;default:'{\"key\": \"value\"}';not null"`
-	IsActive  bool           `gorm:"type:boolean;default:true;"`
+	IsActive  bool           `gorm:"type:boolean;default:false;"`
 	CreatedAt time.Time      `gorm:"autoUpdateTime:milli"`
 	UpdatedAt time.Time      `gorm:"autoCreateTime"`
 }
 
 func NewPostgresRepository(cfg config.DbConfig) *Postgres {
 	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable", cfg.Host, cfg.User, cfg.Password, cfg.DbName, cfg.Port)
-	db, err := gorm.Open(postgres.Open(connStr), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(connStr), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+
 	rawDB, _ := db.DB()
-	rawDB.SetMaxOpenConns(52)
+	rawDB.SetMaxOpenConns(128)
+	rawDB.SetMaxIdleConns(256)
+
 	if err != nil {
 		panic("couldn't connect to database")
 	}
@@ -40,10 +46,6 @@ func NewPostgresRepository(cfg config.DbConfig) *Postgres {
 	if err := db.AutoMigrate(&Banner{}, &Data{}); err != nil {
 		panic("can't migrate databases")
 	}
-	//db.Exec("DELETE  FROM data;")
-	//db.Exec("DELETE FROM banners;")
-	//db.Exec("CREATE INDEX idx_some_int ON banners(data_id)")
-
 	return &Postgres{db}
 }
 
@@ -52,7 +54,6 @@ func (p *Postgres) Stop() error {
 	if err != nil {
 		return errors.New("failed to get database; error: " + err.Error())
 	}
-
 	if err := val.Close(); err != nil {
 		return errors.New("failed to close database connection; error: " + err.Error())
 	}
@@ -96,7 +97,7 @@ func (p *Postgres) Insert(record *models.InsertData) (int32, error) {
 	return banners[0].DataId, nil
 }
 
-func (p *Postgres) Get(feature, tag int32) (data models.JSONMap, userAccess bool, found bool, err error) {
+func (p *Postgres) Get(feature, tag int32) (data models.JSONMap, id int32, userAccess bool, found bool, err error) {
 	tx := p.Db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -251,7 +252,6 @@ func (p *Postgres) GetMany(featureId int32, tagId int32, limit int32, offset int
 		tx.Model(&Banner{}).Where("feature = ? OR tag = ?", featureId, tagId).Pluck("data_id", &ids)
 	}
 	tx.Model(&Banner{}).Where("data_id IN (?)", ids).Find(&resBanners)
-	//fmt.Println(resBanners)
 	tx.Model(&Data{}).Limit(int(limit)).Offset(int(offset)).Where("id IN (?)", ids).Distinct().Find(&resData)
 	res := make([]map[string]interface{}, 0, len(resData))
 	if tx.Error != nil {

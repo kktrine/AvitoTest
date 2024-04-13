@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/gorilla/mux v1.8.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
+	github.com/kr/pretty v0.3.0
 	gorm.io/driver/postgres v1.5.7
 	gorm.io/gorm v1.25.9
 )

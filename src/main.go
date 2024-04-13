@@ -11,16 +11,52 @@ package main
 
 import (
 	openapi "banner/restapi"
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
-	log.Printf("Server started")
 	DefaultAPIService := openapi.NewDefaultAPIService()
 	DefaultAPIController := openapi.NewDefaultAPIController(DefaultAPIService)
 
+	// Создаем маршрутизатор и передаем контроллер
 	router := openapi.NewRouter(DefaultAPIController)
+	// Создаем контекст для управления сервером
+	_, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	// Запускаем сервер в отдельной горутине с использованием контекста
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
+	}
+	go func() {
+		log.Printf("Server started at port 8080")
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Ошибка запуска сервера: %v", err)
+		}
+	}()
+
+	// Ожидание сигнала завершения работы сервера
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	<-stop
+
+	// Остановка сервера с заданным таймаутом
+	log.Println("Shutting down server...")
+	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctxShutdown); err != nil {
+		log.Fatalf("Ошибка остановки сервера: %v", err)
+	}
+	if err := DefaultAPIService.Stop(); err != nil {
+		log.Fatalf("Ошибка остановки сервера: %v", err)
+	}
+	log.Println("Successfully shutdown server...")
 }

@@ -6,10 +6,6 @@ import (
 	"banner/models"
 	"context"
 	"strconv"
-
-	//"database/sql"
-	"errors"
-	"net/http"
 )
 
 // DefaultAPIService is a service that implements the logic for the DefaultAPIServicer
@@ -21,10 +17,9 @@ type DefaultAPIService struct {
 
 // NewDefaultAPIService creates a default api service
 func NewDefaultAPIService() DefaultAPIServicer {
-	storage := storage.NewStorage()
-	//storage.Fill()
+	st := storage.NewStorage()
 	return &DefaultAPIService{
-		Storage: storage,
+		Storage: st,
 	}
 }
 
@@ -42,22 +37,6 @@ func (s *DefaultAPIService) BannerGet(ctx context.Context, token string, feature
 		return Response(500, err.Error()), nil
 	}
 	return Response(200, res), nil
-	// TODO - update BannerGet with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, []BannerGet200ResponseInner{}) or use other options such as http.Ok ...
-	// return Response(200, []BannerGet200ResponseInner{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
-	// return Response(401, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(403, {}) or use other options such as http.Ok ...
-	// return Response(403, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(500, UserBannerGet400Response{}) or use other options such as http.Ok ...
-	// return Response(500, UserBannerGet400Response{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("BannerGet method not implemented")
 }
 
 // BannerIdDelete - Удаление баннера по идентификатору
@@ -141,6 +120,7 @@ func (s *DefaultAPIService) BannerPost(ctx context.Context, bannerGetRequest mod
 		Content:  bannerGetRequest.Content,
 		IsActive: bannerGetRequest.IsActive,
 	})
+
 	if err != nil {
 		return Response(500, err.Error()), nil
 	}
@@ -157,7 +137,7 @@ func (s *DefaultAPIService) UserBannerGet(ctx context.Context, tagId int32, feat
 	if tagId <= 0 || featureId <= 0 {
 		return Response(400, "Некорректные данные. Фича и тэг должны быть положительными числами"), nil
 	}
-	res, userAccess, found, err := s.Storage.GetUserBanner(featureId, tagId)
+	res, userAccess, found, err := s.Storage.GetUserBanner(featureId, tagId, useLastRevision)
 	if err != nil && !found {
 		return Response(500, "Внутренняя ошибка сервера: "+err.Error()), nil
 	}
@@ -171,4 +151,8 @@ func (s *DefaultAPIService) UserBannerGet(ctx context.Context, tagId int32, feat
 		return Response(403, "Пользователь не имеет доступа"), nil
 	}
 	return Response(200, res), nil
+}
+
+func (s *DefaultAPIService) Stop() error {
+	return s.Storage.Stop()
 }
