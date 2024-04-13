@@ -138,7 +138,7 @@ func (s *DefaultAPIService) UserBannerGet(ctx context.Context, tagId int32, feat
 		return Response(400, "Некорректные данные. Фича и тэг должны быть положительными числами"), nil
 	}
 	res, userAccess, found, err := s.Storage.GetUserBanner(featureId, tagId, useLastRevision)
-	if err != nil && !found {
+	if err != nil {
 		return Response(500, "Внутренняя ошибка сервера: "+err.Error()), nil
 	}
 	if !found {

@@ -1,12 +1,9 @@
 package tests
 
 import (
-	"banner/internal/env"
 	"fmt"
 	"math/rand"
 	"net/http"
-	"os"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -38,13 +35,8 @@ func sendGetUserBannerRequest(args string) string {
 }
 
 func TestGetUserBanner(t *testing.T) {
-	env.LoadEnv()
-	num, err := strconv.Atoi(os.Getenv("FEATURES"))
-	if err != nil {
-		panic("Cannot convert TAGS_FEATURES to int" + err.Error())
-	}
-	args := make([]string, 0, num)
-	for i := 1; i < num; i++ {
+	args := make([]string, 0, 1000)
+	for i := 1; i < 1000; i++ {
 		str := fmt.Sprintf("?tag_id=%d&feature_id=%d&use_last_revision=%d", rand.Intn(9)+1, rand.Intn(998)+1, rand.Intn(1))
 		args = append(args, str)
 	}
