@@ -10,6 +10,7 @@
 package main
 
 import (
+	"banner/internal/env"
 	openapi "banner/restapi"
 	"context"
 	"errors"
@@ -22,6 +23,7 @@ import (
 )
 
 func main() {
+	env.LoadEnv()
 	DefaultAPIService := openapi.NewDefaultAPIService()
 	DefaultAPIController := openapi.NewDefaultAPIController(DefaultAPIService)
 
@@ -33,11 +35,11 @@ func main() {
 
 	// Запускаем сервер в отдельной горутине с использованием контекста
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    os.Getenv("PORT"),
 		Handler: router,
 	}
 	go func() {
-		log.Printf("Server started at port 8080")
+		log.Printf("Server started at port " + os.Getenv("PORT"))
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Ошибка запуска сервера: %v", err)
 		}

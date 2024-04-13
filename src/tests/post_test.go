@@ -1,11 +1,14 @@
 package tests
 
 import (
+	"banner/internal/env"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
+	"os"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -40,9 +43,14 @@ func sendPostRequest(banner []byte) string {
 }
 
 func TestAdd(t *testing.T) {
+	env.LoadEnv()
 	banners := make([]map[string]interface{}, 0, 1000)
 	tags := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	for i := 1; i < 1000; i++ {
+	num, err := strconv.Atoi(os.Getenv("FEATURES"))
+	if err != nil {
+		panic("Cannot convert FEATURES to int" + err.Error())
+	}
+	for i := 1; i < num; i++ {
 		requestBody := map[string]interface{}{
 			"is_active":  true,
 			"feature_id": i,

@@ -2,25 +2,19 @@ package storage
 
 import (
 	"banner/internal/cashe"
-	"banner/internal/config"
 	"banner/internal/postgresql"
 	"banner/models"
-	"fmt"
-	"time"
 )
 
 type Storage struct {
-	cfg   *config.Config
 	db    *postgresql.Postgres
 	cache *cashe.Cache
 }
 
 func NewStorage() *Storage {
-	cfg := config.MustLoad()
-	db := postgresql.NewPostgresRepository(cfg.DbConfig)
-	cache := cashe.NewCache(5*time.Minute, 5*time.Minute+30*time.Second)
+	db := postgresql.NewPostgresRepository()
+	cache := cashe.NewCache()
 	return &Storage{
-		cfg:   cfg,
 		db:    db,
 		cache: cache,
 	}
@@ -45,7 +39,7 @@ func (s *Storage) GetUserBanner(feature, tag int32, fromBD bool) (models.JSONMap
 	if !fromBD {
 		content, userAccess := s.cache.Get(feature, tag)
 		if content != nil {
-			fmt.Printf("from cache: feature: %d, tag: %d!\n", feature, tag)
+			//fmt.Printf("from cache: feature: %d, tag: %d!\n", feature, tag)
 			return content, userAccess, true, nil
 		}
 	}

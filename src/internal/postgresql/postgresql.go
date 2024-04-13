@@ -1,13 +1,13 @@
 package postgresql
 
 import (
-	"banner/internal/config"
 	"banner/models"
 	"errors"
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"os"
 	"time"
 )
 
@@ -29,9 +29,8 @@ type Data struct {
 	UpdatedAt time.Time      `gorm:"autoCreateTime"`
 }
 
-func NewPostgresRepository(cfg config.DbConfig) *Postgres {
-	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable", cfg.Host, cfg.User, cfg.Password, cfg.DbName, cfg.Port)
-	db, err := gorm.Open(postgres.Open(connStr), &gorm.Config{
+func NewPostgresRepository() *Postgres {
+	db, err := gorm.Open(postgres.Open(os.Getenv("POSTGRES")), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 
@@ -40,7 +39,7 @@ func NewPostgresRepository(cfg config.DbConfig) *Postgres {
 	rawDB.SetMaxIdleConns(256)
 
 	if err != nil {
-		panic("couldn't connect to database")
+		panic("couldn't connect to database: " + err.Error())
 	}
 	err = db.AutoMigrate(&Banner{}, &Data{})
 	if err := db.AutoMigrate(&Banner{}, &Data{}); err != nil {

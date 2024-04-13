@@ -2,6 +2,7 @@ package cashe
 
 import (
 	"banner/models"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -27,19 +28,24 @@ type Item struct {
 	Expiration time.Time
 }
 
-func NewCache(defaultExpiration, cleanupInterval time.Duration) *Cache {
+func NewCache() *Cache {
 
 	items := make(map[string]Item)
-
+	exp, err := time.ParseDuration(os.Getenv("CACHE_EXPIRATION"))
+	if err != nil {
+		panic("Can't parse CACHE_EXPIRATION: " + err.Error())
+	}
+	clean, err := time.ParseDuration(os.Getenv("CACHE_CLEANUP_INTERVAL"))
+	if err != nil {
+		panic("Can't parse CACHE_CLEANUP_INTERVAL: " + err.Error())
+	}
 	cache := Cache{
 		Items:             items,
-		defaultExpiration: defaultExpiration,
-		cleanupInterval:   cleanupInterval,
+		defaultExpiration: exp,
+		cleanupInterval:   clean,
 	}
 	// Если интервал очистки больше 0, запускаем GC (удаление устаревших элементов)
-	if cleanupInterval > 0 {
-		cache.startGC() // данный метод рассматривается ниже
-	}
+	cache.startGC() // данный метод рассматривается ниже
 
 	return &cache
 }
