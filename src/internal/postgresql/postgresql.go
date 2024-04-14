@@ -251,7 +251,7 @@ func (p *Postgres) GetMany(featureId int32, tagId int32, limit int32, offset int
 		tx.Model(&Banner{}).Where("feature = ? OR tag = ?", featureId, tagId).Pluck("data_id", &ids)
 	}
 	tx.Model(&Banner{}).Where("data_id IN (?)", ids).Find(&resBanners)
-	tx.Model(&Data{}).Limit(int(limit)).Offset(int(offset)).Where("id IN (?)", ids).Distinct().Find(&resData)
+	tx.Model(&Data{}).Limit(int(limit)).Offset(int(offset)).Where("id IN (?)", ids).Find(&resData)
 	res := make([]map[string]interface{}, 0, len(resData))
 	if tx.Error != nil {
 		tx.Rollback()

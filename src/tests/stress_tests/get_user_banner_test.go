@@ -1,4 +1,4 @@
-package tests
+package stress_tests
 
 import (
 	"fmt"

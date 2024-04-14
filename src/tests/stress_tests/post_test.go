@@ -1,9 +1,10 @@
-package tests
+package stress_tests
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -41,7 +42,7 @@ func sendPostRequest(banner []byte) string {
 func TestAdd(t *testing.T) {
 	banners := make([]map[string]interface{}, 0, 1000)
 	tags := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	for i := 1; i < 1000; i++ {
+	for i := 1; i < 1001; i++ {
 		requestBody := map[string]interface{}{
 			"is_active":  true,
 			"feature_id": i,
@@ -52,33 +53,13 @@ func TestAdd(t *testing.T) {
 				"url":   "some_url",
 			},
 		}
-		//if rand.Intn(9) == 1 {
-		//	requestBody["is_active"] = false
-		//}
+		if rand.Intn(9) == 1 {
+			requestBody["is_active"] = false
+		}
 		banners = append(banners, requestBody)
 	}
-	//for i := 1; i < 1000; i++ {
-	//	for j := 1; j <= 10; j++ {
-	//		//count := rand.Intn(4) + 1
-	//		count := rand.Intn(4) + 1
-	//		tags := make([]int32, 0, count)
-	//		for k := int32(j); k < int32(j+count); k++ {
-	//			tags = append(tags, k)
-	//		}
-	//		j += count + 1
-	//		requestBody := map[string]interface{}{
-	//			"is_active":  true,
-	//			"feature_id": i,
-	//			"tag_ids":    tags,
-	//			"content": map[string]string{
-	//				"title": "some_title",
-	//				"text":  "some_text",
-	//				"url":   "some_url",
-	//			},
-	//		}
-	//		banners = append(banners, requestBody)
-	//	}
-	//}
+	banners[998]["is_active"] = true
+	banners[999]["is_active"] = false
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	total := len(banners)
