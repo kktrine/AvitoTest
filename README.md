@@ -3,10 +3,10 @@
 # Оглавление
 
 - [Запуск](#запуск)
-    - [Лкально](#локально)
+    - [Локально](#локально)
     - [Запуск в docker](#запуск-в-docker)
     - [Запуск тестов](#запуск-тестов)
-        - [Инструкция по запуску](#инструкция-по-запускку-тестов)
+        - [Инструкция по запуску тестов](#инструкция-по-запускку-тестов)
 - [Описание работы](#описание-работы)
     - [Организация базы данных](#организация-базы-данных)
 - [Что реализовано](#что-реализовано)
@@ -14,6 +14,13 @@
 - [Нагрузочные тесты](#нагрузочные-тесты)
     - [1000 RPS](#1000-rps)
     - [2000 RPS](#2000-rps)
+- [Примеры запросов](#примеры-запросов)
+    - [POST /banner](#post-banner)
+    - [GET /user_banner](#get-user_banner)
+    - [GET /banner](#get-banner)
+    - [DELETE /banner/{id}](#delete-bannerid)
+    - [PATCH /banner/{id}](#patch-bannerid)
+
 
 ## Запуск
 ### Локально
@@ -118,6 +125,7 @@ Indexes:
 В случае получения из базы данных в целом запросы выполняются быстро (общее время с отправки первого запроса и до получения ответа последним, разделенное на кол-во запросов, получается в районе 10 миллисекунд), но время ответа на самые долгие запросы возрастает до 100-200 миллисекунд.
 * Проведено нагрузочное тестирование, результаты здесь 
 * Реализованы Е2Е тесты для всех запросов
+* Статический анализ кода ```make check```
 
 
 ## Нагрузочные тесты
@@ -129,3 +137,34 @@ Indexes:
 
 ### ```2000 RPS```
 ![2000.png](src/img/2000.png)
+
+## Примеры запросов
+### ```POST /banner```
+```shell
+curl -X POST "http://localhost:8080/banner" -H "Content-Type: application/json" -H "Token: admin_token" -d '{
+"tag_ids": [1, 2, 3],
+"feature_id": 1,
+"content": '"{\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}"',
+"is_active": true
+}'
+```
+### ```GET /user_banner```
+```shell
+curl -X GET "http://localhost:8080/user_banner?tag_id=1&feature_id=8&use_last_revision=true" -H "Token: user_token"
+```
+### ```GET /banner```
+```shell
+curl -X GET "http://localhost:8080/banner?tag_id=123&limit=5&offset=1" -H "Token: admin_token"
+```
+### ```DELETE /banner/{id}```
+```shell
+curl -X DELETE "http://localhost:8080/banner/1" -H "Token: admin_token"
+```
+### ```PATCH /banner/{id}```
+```shell
+curl -X PATCH "http://localhost:8080/banner/10" -H "Content-Type: application/json" -H "Token: admin_token" -d '{
+  "tag_ids": [31, 22],
+  "content": '"{\"title\": \"some_title\", \"text\": \"some_text\", \"url\": \"some_url\"}"',
+  "feature_id": 9
+}'
+```
