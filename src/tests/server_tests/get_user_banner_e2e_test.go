@@ -10,11 +10,11 @@ import (
 //feature = [999] : ["is_active"] = true
 //feature = [1000]: ["is_active"] = false
 
-func TestGerUserBanner200_Test_1(t *testing.T) {
+func TestGetUserBanner200_Test_1(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 1, status 200",
+		TestName: "GET /user_banner, status 200",
 	})
 
 	exp.GET("/user_banner").
@@ -25,11 +25,11 @@ func TestGerUserBanner200_Test_1(t *testing.T) {
 		Expect().Status(http.StatusOK).JSON().Raw()
 }
 
-func TestGerUserBanner200_Test_2(t *testing.T) {
+func TestGetUserBanner200_Test_2(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 2, status 200 (from cache)",
+		TestName: "GET /user_banner, status 200 (from cache)",
 	})
 
 	exp.GET("/user_banner").
@@ -40,11 +40,11 @@ func TestGerUserBanner200_Test_2(t *testing.T) {
 		Expect().Status(http.StatusOK).JSON().Raw()
 }
 
-func TestGerUserBanner200_Test_3(t *testing.T) {
+func TestGetUserBanner200_Test_3(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 3, status 200 (admin token, is_active = true)",
+		TestName: "GET /user_banner, status 200 (admin token, is_active = true)",
 	})
 
 	exp.GET("/user_banner").
@@ -55,11 +55,11 @@ func TestGerUserBanner200_Test_3(t *testing.T) {
 		Expect().Status(http.StatusOK).JSON().Raw()
 }
 
-func TestGerUserBanner200_Test_4(t *testing.T) {
+func TestGetUserBanner200_Test_4(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 4, status 200 (admin token, is_active = false)",
+		TestName: "GET /user_banner, status 200 (admin token, is_active = false)",
 	})
 
 	exp.GET("/user_banner").
@@ -71,11 +71,11 @@ func TestGerUserBanner200_Test_4(t *testing.T) {
 
 }
 
-func TestGerUserBanner400_Test_1(t *testing.T) {
+func TestGetUserBanner400_Test_1(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 4, status 400 (invalid feature and tag)",
+		TestName: "GET /user_banner, status 400 (invalid feature and tag)",
 	})
 
 	exp.GET("/user_banner").
@@ -86,11 +86,11 @@ func TestGerUserBanner400_Test_1(t *testing.T) {
 		Expect().Status(http.StatusBadRequest).JSON().IsEqual("Некорректные данные. Фича и тэг должны быть положительными числами")
 }
 
-func TestGerUserBanner400_Test_2(t *testing.T) {
+func TestGetUserBanner400_Test_2(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 2, status 400 (invalid feature)",
+		TestName: "GET /user_banner, status 400 (invalid feature)",
 	})
 
 	exp.GET("/user_banner").
@@ -101,11 +101,11 @@ func TestGerUserBanner400_Test_2(t *testing.T) {
 		Expect().Status(http.StatusBadRequest).JSON().IsEqual("Некорректные данные. Фича и тэг должны быть положительными числами")
 }
 
-func TestGerUserBanner400_Test_3(t *testing.T) {
+func TestGetUserBanner400_Test_3(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 3, status 400 (invalid tag)",
+		TestName: "GET /user_banner, status 400 (invalid tag)",
 	})
 
 	exp.GET("/user_banner").
@@ -116,11 +116,11 @@ func TestGerUserBanner400_Test_3(t *testing.T) {
 		Expect().Status(http.StatusBadRequest).JSON().IsEqual("Некорректные данные. Фича и тэг должны быть положительными числами")
 }
 
-func TestGerUserBanner401_Test_1(t *testing.T) {
+func TestGetUserBanner401_Test_1(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 1, status 401 (invalid token)",
+		TestName: "GET /user_banner, status 401 (invalid token)",
 	})
 
 	exp.GET("/user_banner").
@@ -131,11 +131,11 @@ func TestGerUserBanner401_Test_1(t *testing.T) {
 		Expect().Status(http.StatusUnauthorized)
 }
 
-func TestGerUserBanner403_Test_1(t *testing.T) {
+func TestGetUserBanner403_Test_1(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 1, status 403 (user_token to is_active = false banner)",
+		TestName: "GET /user_banner, status 403 (user_token to is_active = false banner)",
 	})
 
 	exp.GET("/user_banner").
@@ -146,11 +146,11 @@ func TestGerUserBanner403_Test_1(t *testing.T) {
 		Expect().Status(http.StatusForbidden).JSON().IsEqual("Пользователь не имеет доступа")
 }
 
-func TestGerUserBanner404_Test_1(t *testing.T) {
+func TestGetUserBanner404_Test_1(t *testing.T) {
 	exp := httpexpect.WithConfig(httpexpect.Config{
 		BaseURL:  "http://localhost:8080",
 		Reporter: httpexpect.NewAssertReporter(t),
-		TestName: "GET /user_banner 1, status 404 (banner not found)",
+		TestName: "GET /user_banner, status 404 (banner not found)",
 	})
 
 	exp.GET("/user_banner").

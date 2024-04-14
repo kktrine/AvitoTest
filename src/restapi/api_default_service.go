@@ -5,7 +5,6 @@ import (
 	"banner/internal/storage"
 	"banner/models"
 	"context"
-	"strconv"
 )
 
 // DefaultAPIService is a service that implements the logic for the DefaultAPIServicer
@@ -72,13 +71,21 @@ func (s *DefaultAPIService) BannerIdPatch(ctx context.Context, id int32, bannerI
 		return Response(403, "Пользователь не имеет доступа"), nil
 	}
 	if id <= 0 {
-		return Response(400, "Некорректные данные. Id должен быть положительным числом"), nil
+		return Response(400, models.UserBannerGet400Response{Error: "Некорректные данные. Id должен быть положительным числом"}), nil
 	}
 	toUpdate := models.InsertData{}
 	if bannerIdDeleteRequest.FeatureId != nil {
+		if *bannerIdDeleteRequest.FeatureId <= 0 {
+			return Response(400, models.UserBannerGet400Response{Error: "Некорректные данные. Feature должен быть положительным числом"}), nil
+		}
 		toUpdate.Feature = *bannerIdDeleteRequest.FeatureId
 	}
 	if bannerIdDeleteRequest.TagIds != nil {
+		for _, tag := range *bannerIdDeleteRequest.TagIds {
+			if tag <= 0 {
+				return Response(400, models.UserBannerGet400Response{Error: "Некорректные данные. Tags должны быть положительным числом"}), nil
+			}
+		}
 		toUpdate.TagIds = *bannerIdDeleteRequest.TagIds
 	}
 	if bannerIdDeleteRequest.Content != nil {
@@ -122,9 +129,9 @@ func (s *DefaultAPIService) BannerPost(ctx context.Context, bannerGetRequest mod
 	})
 
 	if err != nil {
-		return Response(500, err.Error()), nil
+		return Response(400, models.UserBannerGet400Response{Error: err.Error()}), nil
 	}
-	return Response(201, "Created with id: "+strconv.Itoa(int(id))), nil
+	return Response(201, models.BannerGet201Response{BannerId: id}), nil
 }
 
 // UserBannerGet - Получение баннера для пользователя

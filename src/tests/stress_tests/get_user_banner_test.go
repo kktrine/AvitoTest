@@ -19,7 +19,7 @@ func sendGetUserBannerRequest(args string) string {
 		fmt.Println("Ошибка при создании запроса:", err)
 		return ""
 	}
-	req.Header.Set("token", "user_token")
+	req.Header.Set("token", "admin_token")
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
