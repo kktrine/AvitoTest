@@ -88,7 +88,6 @@ make test_e2e_patch
 
 ### Организация базы данных
 В базе данных 2 таблицы:
-Использована база данных Postgres, пакет ```gorm```. В ней 2 таблицы:
 ``` SQL
                                        Table "public.data"
    Column   |           Type           | Collation | Nullable |             Default              
