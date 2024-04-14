@@ -40,9 +40,10 @@ func sendPostRequest(banner []byte) string {
 }
 
 func TestAdd(t *testing.T) {
-	banners := make([]map[string]interface{}, 0, 1000)
+	n := 3000
+	banners := make([]map[string]interface{}, 0, n)
 	tags := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	for i := 1; i < 1001; i++ {
+	for i := 1; i < n+1; i++ {
 		requestBody := map[string]interface{}{
 			"is_active":  true,
 			"feature_id": i,

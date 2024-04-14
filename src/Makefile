@@ -4,6 +4,9 @@ run:
 build:
 	@docker build -t openapi .
 
+docker_build:
+	@docker build -t openapi .
+
 docker_run:
 	@docker compose up
 
@@ -29,7 +32,6 @@ test_e2e_get_user_banner:
 test_e2e_get_many_banners:
 	@go test -v ./tests/server_tests/get_many_banners_e2e_test.go
 
-
 test_e2e_post:
 	@go test -v ./tests/server_tests/post_e2e_test.go
 
@@ -39,5 +41,5 @@ test_e2e_delete:
 test_e2e_patch:
 	@go test -v ./tests/server_tests/patch_e2e_test.go
 
-static_check:
+check:
 	@go vet -vettool=$(which staticcheck -f) ./...

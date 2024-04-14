@@ -35,8 +35,9 @@ func sendGetUserBannerRequest(args string) string {
 }
 
 func TestGetUserBanner(t *testing.T) {
-	args := make([]string, 0, 1000)
-	for i := 1; i < 1000; i++ {
+	n := 3000
+	args := make([]string, 0, n)
+	for i := 1; i < n+1; i++ {
 		str := fmt.Sprintf("?tag_id=%d&feature_id=%d&use_last_revision=%d", rand.Intn(9)+1, rand.Intn(998)+1, rand.Intn(1))
 		args = append(args, str)
 	}
