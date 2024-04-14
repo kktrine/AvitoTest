@@ -48,7 +48,7 @@ make docker_down // docker compose down -- остановка контейнер
 #### Инструкция по запускку тестов
 ```shell
 // После даления таблиц data, banners из базы данных
-make run
+make run // поднять сервер
 make stress_tests
 make server_tests
 ```
