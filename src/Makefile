@@ -7,10 +7,10 @@ build:
 docker_build:
 	@docker build -t openapi .
 
-docker_run:
+docker_up:
 	@docker compose up
 
-compose_down:
+docker_down:
 	@docker compose down
 
 server_tests:
